@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tracker Admin — Endorsement Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+[data-theme="dark"] {
+  --bg:            #0c0c0e;
+  --bg2:           #111113;
+  --surface:       #18181c;
+  --surface2:      #1f1f24;
+  --border:        rgba(255,255,255,0.07);
+  --border-md:     rgba(255,255,255,0.13);
+  --border-strong: rgba(255,255,255,0.2);
+  --text-1:        #f0ede8;
+  --text-2:        #9c9699;
+  --text-3:        #504e56;
+  --red:           #d93535;
+  --red-dim:       rgba(217,53,53,0.13);
+  --red-text:      #f07070;
+  --blue:          #3a8fd4;
+  --blue-dim:      rgba(58,143,212,0.13);
+  --blue-text:     #6fb8f5;
+  --green:         #3aad6e;
+  --green-dim:     rgba(58,173,110,0.13);
+  --green-text:    #5fd494;
+  --input-bg:      #18181c;
+  --input-border:  rgba(255,255,255,0.13);
+}
+[data-theme="light"] {
+  --bg:            #f6f4f0;
+  --bg2:           #edeae4;
+  --surface:       #ffffff;
+  --surface2:      #f0ede8;
+  --border:        rgba(0,0,0,0.07);
+  --border-md:     rgba(0,0,0,0.11);
+  --border-strong: rgba(0,0,0,0.2);
+  --text-1:        #18161a;
+  --text-2:        #5a5660;
+  --text-3:        #a09ca8;
+  --red:           #c02828;
+  --red-dim:       rgba(192,40,40,0.08);
+  --red-text:      #b02020;
+  --blue:          #1a6fb0;
+  --blue-dim:      rgba(26,111,176,0.08);
+  --blue-text:     #1060a0;
+  --green:         #1a8f50;
+  --green-dim:     rgba(26,143,80,0.09);
+  --green-text:    #0d7040;
+  --input-bg:      #ffffff;
+  --input-border:  rgba(0,0,0,0.15);
+}
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+body {
+  font-family:'IBM Plex Sans',sans-serif;
+  background:var(--bg);
+  color:var(--text-1);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── Header ── */
+.header {
+  border-bottom:1px solid var(--border-strong);
+  padding:0 2rem;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  height:56px;
+  background:var(--bg);
+  position:sticky; top:0; z-index:200;
+}
+.header-left { display:flex; align-items:center; gap:12px; }
+.logo-dots { display:flex; gap:4px; }
+.dot { width:9px; height:9px; border-radius:50%; }
+.dot.r { background:var(--red); }
+.dot.b { background:var(--blue); }
+.header-title {
+  font-size:12px; font-weight:600;
+  letter-spacing:0.12em; text-transform:uppercase;
+  color:var(--text-2);
+}
+.header-title span { color:var(--red); }
+.header-right { display:flex; align-items:center; gap:10px; }
+
+.theme-toggle {
+  display:flex; align-items:center; gap:6px;
+  cursor:pointer; user-select:none;
+}
+.tgl-label {
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10px; color:var(--text-3);
+  text-transform:uppercase; letter-spacing:0.06em;
+  min-width:28px;
+}
+.tgl-track {
+  width:32px; height:17px; border-radius:9px;
+  background:var(--border-strong);
+  border:1px solid var(--border-md);
+  position:relative; transition:background 0.2s;
+}
+.tgl-thumb {
+  position:absolute; top:2px; left:2px;
+  width:11px; height:11px; border-radius:50%;
+  background:var(--text-1); transition:transform 0.2s;
+}
+[data-theme="light"] .tgl-thumb { transform:translateX(15px); }
+
+/* ── Layout ── */
+.layout {
+  display:grid;
+  grid-template-columns:1fr 380px;
+  gap:0;
+  min-height:calc(100vh - 56px);
+}
+.main-panel {
+  border-right:1px solid var(--border);
+  display:flex; flex-direction:column;
+}
+.side-panel {
+  background:var(--bg2);
+  display:flex; flex-direction:column;
+  overflow-y:auto;
+  max-height:calc(100vh - 56px);
+  position:sticky; top:56px;
+}
+
+/* ── Toolbar ── */
+.toolbar {
+  padding:1rem 1.5rem;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap; gap:10px;
+  background:var(--bg2);
+}
+.toolbar-left { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.toolbar-right { display:flex; align-items:center; gap:8px; }
+
+.btn {
+  display:inline-flex; align-items:center; gap:6px;
+  font-family:'IBM Plex Sans',sans-serif;
+  font-size:12px; font-weight:600;
+  letter-spacing:0.03em; text-transform:uppercase;
+  padding:7px 14px; border-radius:4px;
+  border:1px solid transparent;
+  cursor:pointer; white-space:nowrap;
+  transition:opacity 0.15s, transform 0.1s, background 0.15s;
+  text-decoration:none;
+}
+.btn:hover { opacity:0.88; transform:translateY(-1px); }
+.btn-red   { background:var(--red);   color:#fff; border-color:var(--red); }
+.btn-blue  { background:var(--blue);  color:#fff; border-color:var(--blue); }
+.btn-green { background:var(--green); color:#fff; border-color:var(--green); }
+.btn-ghost {
+  background:transparent; color:var(--text-1);
+  border-color:var(--border-strong);
+}
+.btn-ghost:hover { background:var(--surface2); }
+.btn-sm { padding:5px 10px; font-size:11px; }
+
+/* Search within table */
+.search-bar {
+  padding:0.75rem 1.5rem;
+  border-bottom:1px solid var(--border);
+  background:var(--bg);
+}
+.search-wrap { position:relative; max-width:320px; }
+.search-ico {
+  position:absolute; left:9px; top:50%;
+  transform:translateY(-50%);
+  color:var(--text-3); pointer-events:none;
+  display:flex; align-items:center;
+}
+input[type="text"], input[type="date"], select, textarea {
+  font-family:'IBM Plex Sans',sans-serif;
+  font-size:13px; color:var(--text-1);
+  background:var(--input-bg);
+  border:1px solid var(--input-border);
+  border-radius:4px; outline:none;
+  transition:border-color 0.15s;
+}
+input[type="text"]::placeholder { color:var(--text-3); }
+input[type="text"]:focus,
+input[type="date"]:focus,
+select:focus,
+textarea:focus { border-color:var(--blue); }
+
+.search-input {
+  width:100%;
+  padding:7px 12px 7px 32px;
+}
+
+/* ── Candidate list ── */
+.candidate-list {
+  flex:1; overflow-y:auto;
+}
+.candidate-row {
+  display:grid;
+  grid-template-columns:1fr auto auto;
+  align-items:center; gap:10px;
+  padding:10px 1.5rem;
+  border-bottom:1px solid var(--border);
+  cursor:pointer;
+  transition:background 0.1s;
+}
+.candidate-row:hover { background:var(--surface); }
+.candidate-row.selected { background:var(--blue-dim); border-left:3px solid var(--blue); padding-left:calc(1.5rem - 3px); }
+.candidate-row.selected .cr-name { color:var(--blue-text); }
+
+.cr-info {}
+.cr-name { font-weight:600; font-size:13px; }
+.cr-meta {
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10px; color:var(--text-3);
+  margin-top:2px; letter-spacing:0.02em;
+}
+.cr-badges { display:flex; gap:5px; align-items:center; flex-shrink:0; }
+.cr-actions { display:flex; gap:5px; flex-shrink:0; }
+
+.badge {
+  display:inline-flex; align-items:center;
+  padding:2px 7px; border-radius:3px;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:9px; font-weight:500;
+  letter-spacing:0.04em; white-space:nowrap;
+  border:1px solid transparent;
+}
+.b-senate  { background:var(--blue-dim);  color:var(--blue-text);  border-color:rgba(58,143,212,0.25); }
+.b-house   { background:var(--red-dim);   color:var(--red-text);   border-color:rgba(217,53,53,0.25); }
+.b-gov     { background:var(--blue-dim);  color:var(--blue-text);  border-color:rgba(58,143,212,0.25); }
+.b-state   { background:rgba(176,184,200,0.08); color:#b0b8c8; border-color:rgba(176,184,200,0.2); }
+.b-won     { background:var(--green-dim); color:var(--green-text); border-color:rgba(58,173,110,0.25); }
+.b-lost    { background:var(--red-dim);   color:var(--red-text);   border-color:rgba(217,53,53,0.25); }
+.b-pending { background:rgba(176,184,200,0.08); color:#b0b8c8; border-color:rgba(176,184,200,0.2); }
+.b-na      { background:rgba(176,184,200,0.06); color:var(--text-3); border-color:rgba(176,184,200,0.15); }
+
+.icon-btn {
+  width:28px; height:28px;
+  display:inline-flex; align-items:center; justify-content:center;
+  border-radius:4px; border:1px solid var(--border-md);
+  background:transparent; cursor:pointer; color:var(--text-3);
+  transition:background 0.1s, color 0.1s, border-color 0.1s;
+}
+.icon-btn:hover { background:var(--surface2); color:var(--text-1); border-color:var(--border-strong); }
+.icon-btn.del:hover { background:var(--red-dim); color:var(--red-text); border-color:rgba(217,53,53,0.3); }
+
+/* ── Side panel: editor ── */
+.side-header {
+  padding:1rem 1.5rem 0.75rem;
+  border-bottom:1px solid var(--border);
+}
+.side-title {
+  font-family:'Playfair Display',serif;
+  font-size:16px; font-weight:700;
+  color:var(--text-1);
+}
+.side-sub {
+  font-size:11px; font-weight:300;
+  color:var(--text-3); margin-top:2px;
+}
+
+.editor-form {
+  padding:1rem 1.5rem;
+  display:flex; flex-direction:column; gap:12px;
+  flex:1;
+}
+.field { display:flex; flex-direction:column; gap:5px; }
+.field-label {
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10px; font-weight:500;
+  text-transform:uppercase; letter-spacing:0.08em;
+  color:var(--text-3);
+}
+.field input[type="text"],
+.field input[type="date"],
+.field select,
+.field textarea {
+  width:100%; padding:8px 10px;
+}
+.field textarea { resize:vertical; min-height:72px; line-height:1.5; }
+.field select {
+  appearance:none; -webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 10px center;
+  padding-right:28px;
+}
+
+.field-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+.editor-actions {
+  padding:1rem 1.5rem;
+  border-top:1px solid var(--border);
+  display:flex; gap:8px; flex-wrap:wrap;
+  background:var(--bg2);
+  position:sticky; bottom:0;
+}
+
+/* ── Output panel ── */
+.output-section {
+  border-top:1px solid var(--border-strong);
+  margin-top:auto;
+}
+.output-header {
+  padding:0.85rem 1.5rem;
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.output-title {
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px; font-weight:500;
+  text-transform:uppercase; letter-spacing:0.08em;
+  color:var(--text-3);
+}
+.output-code {
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px; line-height:1.6;
+  color:var(--blue-text);
+  background:var(--bg);
+  padding:1rem 1.5rem;
+  max-height:220px;
+  overflow-y:auto;
+  white-space:pre-wrap;
+  word-break:break-all;
+  border-bottom:1px solid var(--border);
+}
+.output-instructions {
+  padding:0.85rem 1.5rem;
+  font-size:11px; font-weight:300;
+  color:var(--text-3); line-height:1.6;
+}
+.output-instructions strong { color:var(--text-2); font-weight:500; }
+
+/* ── Empty state ── */
+.empty-editor {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:2rem; text-align:center; gap:8px;
+}
+.empty-icon { font-size:32px; opacity:0.3; }
+.empty-text { font-size:13px; color:var(--text-3); font-style:italic; }
+
+/* ── Toast ── */
+.toast {
+  position:fixed; bottom:1.5rem; right:1.5rem;
+  background:var(--green); color:#fff;
+  font-size:13px; font-weight:500;
+  padding:10px 18px; border-radius:6px;
+  opacity:0; transform:translateY(8px);
+  transition:opacity 0.2s, transform 0.2s;
+  pointer-events:none; z-index:999;
+}
+.toast.show { opacity:1; transform:translateY(0); }
+
+/* ── Count badge ── */
+.count-pill {
+  display:inline-flex; align-items:center;
+  padding:2px 8px; border-radius:10px;
+  background:var(--surface2); color:var(--text-2);
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10px; font-weight:500;
+  border:1px solid var(--border-md);
+}
+
+@media (max-width:900px) {
+  .layout { grid-template-columns:1fr; }
+  .side-panel { position:static; max-height:none; border-right:none; border-top:1px solid var(--border); }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="logo-dots">
+      <div class="dot r"></div>
+      <div class="dot b"></div>
+    </div>
+    <span class="header-title">Tracker <span>Admin</span> — Endorsement Editor</span>
+  </div>
+  <div class="header-right">
+    <div class="theme-toggle" onclick="toggleTheme()" role="button" tabindex="0" aria-label="Toggle theme">
+      <span class="tgl-label" id="tgl-lbl">Dark</span>
+      <div class="tgl-track"><div class="tgl-thumb"></div></div>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- LEFT: candidate list -->
+  <div class="main-panel">
+
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn btn-green" onclick="startNew()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Endorsement
+        </button>
+        <button class="btn btn-ghost" onclick="importFromTracker()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Import JSON
+        </button>
+        <span class="count-pill" id="count-pill">0 endorsements</span>
+      </div>
+      <div class="toolbar-right">
+        <button class="btn btn-blue" onclick="exportAndCopy()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copy Code
+        </button>
+      </div>
+    </div>
+
+    <div class="search-bar">
+      <div class="search-wrap">
+        <span class="search-ico">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <input type="text" class="search-input" id="list-search" placeholder="Filter list…" oninput="renderList()">
+      </div>
+    </div>
+
+    <div class="candidate-list" id="candidate-list"></div>
+  </div>
+
+  <!-- RIGHT: editor + output -->
+  <div class="side-panel">
+
+    <div class="side-header">
+      <div class="side-title" id="side-title">Select or add an endorsement</div>
+      <div class="side-sub" id="side-sub">Click any row to edit it, or click Add to create a new one</div>
+    </div>
+
+    <div id="editor-area">
+      <div class="empty-editor" id="empty-editor">
+        <div class="empty-icon">✏️</div>
+        <div class="empty-text">Select a row to edit,<br>or click "Add Endorsement"</div>
+      </div>
+
+      <div class="editor-form" id="editor-form" style="display:none">
+
+        <div class="field">
+          <label class="field-label">Candidate name *</label>
+          <input type="text" id="f-name" placeholder="e.g. Barry Moore">
+        </div>
+
+        <div class="field">
+          <label class="field-label">Subtitle / role</label>
+          <input type="text" id="f-sub" placeholder="e.g. Rep. (AL-1)">
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">Office type *</label>
+            <select id="f-type">
+              <option value="Senate">U.S. Senate</option>
+              <option value="House">U.S. House</option>
+              <option value="Governor">Governor</option>
+              <option value="State">State / Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">State *</label>
+            <select id="f-state">
+              <option value="AL">AL</option><option value="AK">AK</option><option value="AZ">AZ</option>
+              <option value="AR">AR</option><option value="CA">CA</option><option value="CO">CO</option>
+              <option value="CT">CT</option><option value="DE">DE</option><option value="FL">FL</option>
+              <option value="GA">GA</option><option value="HI">HI</option><option value="ID">ID</option>
+              <option value="IL">IL</option><option value="IN">IN</option><option value="IA">IA</option>
+              <option value="KS">KS</option><option value="KY">KY</option><option value="LA">LA</option>
+              <option value="ME">ME</option><option value="MD">MD</option><option value="MA">MA</option>
+              <option value="MI">MI</option><option value="MN">MN</option><option value="MS">MS</option>
+              <option value="MO">MO</option><option value="MT">MT</option><option value="NE">NE</option>
+              <option value="NV">NV</option><option value="NH">NH</option><option value="NJ">NJ</option>
+              <option value="NM">NM</option><option value="NY">NY</option><option value="NC">NC</option>
+              <option value="ND">ND</option><option value="OH">OH</option><option value="OK">OK</option>
+              <option value="OR">OR</option><option value="PA">PA</option><option value="RI">RI</option>
+              <option value="SC">SC</option><option value="SD">SD</option><option value="TN">TN</option>
+              <option value="TX">TX</option><option value="UT">UT</option><option value="VT">VT</option>
+              <option value="VA">VA</option><option value="WA">WA</option><option value="WV">WV</option>
+              <option value="WI">WI</option><option value="WY">WY</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Full office name</label>
+          <input type="text" id="f-office" placeholder="e.g. U.S. Senate or U.S. House (KY-4)">
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">Endorsement date</label>
+            <input type="text" id="f-endorsed" placeholder="e.g. Jul 2025">
+          </div>
+          <div class="field">
+            <label class="field-label">Polling</label>
+            <input type="text" id="f-poll" placeholder="e.g. 58% or —">
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Primary result *</label>
+          <select id="f-primary">
+            <option value="Pending">Pending</option>
+            <option value="Won">Won</option>
+            <option value="Lost">Lost</option>
+            <option value="N/A">N/A</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Notes</label>
+          <textarea id="f-notes" placeholder="Context, background, outcome details…"></textarea>
+        </div>
+
+      </div>
+
+      <div class="editor-actions" id="editor-actions" style="display:none">
+        <button class="btn btn-green" onclick="saveEntry()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Save
+        </button>
+        <button class="btn btn-ghost" onclick="cancelEdit()">Cancel</button>
+        <button class="btn btn-ghost btn-sm" id="btn-delete" onclick="deleteEntry()" style="margin-left:auto; color:var(--red-text); border-color:rgba(217,53,53,0.3)">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+          Delete
+        </button>
+      </div>
+    </div>
+
+    <!-- Output / export section -->
+    <div class="output-section">
+      <div class="output-header">
+        <span class="output-title">Export — paste into tracker.html</span>
+        <button class="btn btn-blue btn-sm" onclick="exportAndCopy()">Copy</button>
+      </div>
+      <div class="output-code" id="output-code">// Click "Copy Code" after making changes…</div>
+      <div class="output-instructions">
+        <strong>How to update your live tracker:</strong><br>
+        1. Make your edits above, click Save.<br>
+        2. Click <strong>Copy Code</strong> — this copies the updated <code>ENDORSEMENTS</code> array.<br>
+        3. Open <strong>trump-2026-endorsement-tracker.html</strong> in a text editor.<br>
+        4. Find <code>const ENDORSEMENTS = [</code> and replace everything from that line through the closing <code>];</code> with the copied code.<br>
+        5. Save the file and push to GitHub. Done! ✓
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Hidden file input for JSON import -->
+<input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFileImport(event)">
+
+<script>
+/* ── Default data (mirrors tracker) ───────────────────────── */
+let DATA = [
+  { name:"Barry Moore",        sub:"Rep. (AL-1)",          office:"U.S. Senate",               type:"Senate",   state:"AL", endorsed:"Aug 2025",  poll:"—", primary:"Pending", notes:"Running for open AL Senate seat vacated by Tuberville, who is also Trump-endorsed for AL governor" },
+  { name:"Tommy Tuberville",   sub:"Sen.",                 office:"Governor",                   type:"Governor", state:"AL", endorsed:"2025",       poll:"—", primary:"Pending", notes:"Retiring senator; endorsed by Trump for AL governor race" },
+  { name:"Andy Barr",          sub:"Rep.",                 office:"U.S. Senate",                type:"Senate",   state:"KY", endorsed:"2026",       poll:"—", primary:"Pending", notes:"Backed to succeed McConnell; Trump asked rival Nate Morris to step aside" },
+  { name:"Julia Letlow",       sub:"Rep. (LA-5)",          office:"U.S. Senate",                type:"Senate",   state:"LA", endorsed:"Jan 2026",   poll:"—", primary:"Pending", notes:"Backed over incumbent Sen. Bill Cassidy; she entered the race after Trump's endorsement" },
+  { name:"Mike Rogers",        sub:"Rep. (MI-8)",          office:"U.S. Senate",                type:"Senate",   state:"MI", endorsed:"Jul 2025",   poll:"—", primary:"Pending", notes:"Early endorsement; open seat after Sen. Tina Smith (D) announced retirement" },
+  { name:"Cindy Hyde-Smith",   sub:"Sen.",                 office:"U.S. Senate",                type:"Senate",   state:"MS", endorsed:"2025",       poll:"—", primary:"Won",     notes:"Incumbent reelection; won primary" },
+  { name:"Michael Whatley",    sub:"Former RNC chair",     office:"U.S. Senate",                type:"Senate",   state:"NC", endorsed:"Jul 2025",   poll:"—", primary:"Won",     notes:"Won GOP primary Mar 3, defeating Don Brown. Endorsed after Sen. Tillis announced retirement." },
+  { name:"Steve Daines",       sub:"Sen.",                 office:"U.S. Senate",                type:"Senate",   state:"MT", endorsed:"2025",       poll:"—", primary:"N/A",     notes:"Daines announced retirement Mar 4, 2026 — endorsement is now moot" },
+  { name:"Jim Baird",          sub:"Rep. (IN-4)",          office:"U.S. House (IN-4)",          type:"House",    state:"IN", endorsed:"2025",       poll:"—", primary:"Pending", notes:"Incumbent facing challenge from state Rep. Craig Haggard; Baird is 80 with lower fundraising" },
+  { name:"Ed Gallrein",        sub:"Former Navy SEAL",     office:"U.S. House (KY-4)",          type:"House",    state:"KY", endorsed:"2025",       poll:"—", primary:"Pending", notes:"Endorsed over incumbent Rep. Thomas Massie. KY primary May 19, 2026. High-profile test." },
+  { name:"Mark Lamb",          sub:"Former sheriff",       office:"U.S. House (AZ-5)",          type:"House",    state:"AZ", endorsed:"2025",       poll:"—", primary:"Pending", notes:"Open race; Rep. Andy Biggs retiring for governor bid. Cook rates general as toss-up." },
+  { name:"Gina Swoboda",       sub:"AZ GOP chair",         office:"U.S. House (AZ-1)",          type:"House",    state:"AZ", endorsed:"2025",       poll:"—", primary:"Pending", notes:"Open race; Rep. Schweikert retiring. Trump also endorsed Jay Feely in same primary." },
+  { name:"Andy Ogles",         sub:"Rep. (TN-5)",          office:"U.S. House (TN-5)",          type:"House",    state:"TN", endorsed:"2025",       poll:"—", primary:"Pending", notes:"Incumbent facing challenge from former TN Agriculture Commissioner Charlie Hatcher" },
+  { name:"Nathaniel Moran",    sub:"Rep. (TX-1)",          office:"U.S. House (TX-1)",          type:"House",    state:"TX", endorsed:"2025",       poll:"—", primary:"Pending", notes:"Incumbent vs. Ryan Nichols, recipient of Trump's Jan. 6 blanket pardon" },
+  { name:"Trent Kelly",        sub:"Rep. (MS-1)",          office:"U.S. House (MS-1)",          type:"House",    state:"MS", endorsed:"2025",       poll:"—", primary:"Won",     notes:"Won primary March 10" },
+  { name:"Michael Guest",      sub:"Rep. (MS-3)",          office:"U.S. House (MS-3)",          type:"House",    state:"MS", endorsed:"2025",       poll:"—", primary:"Won",     notes:"Won primary March 10" },
+  { name:"Mike Ezell",         sub:"Rep. (MS-4)",          office:"U.S. House (MS-4)",          type:"House",    state:"MS", endorsed:"2025",       poll:"—", primary:"Won",     notes:"Won primary March 10" },
+  { name:"Anthony Constantino",sub:"Boxer & businessman",  office:"U.S. House (NY-21)",         type:"House",    state:"NY", endorsed:"2026",       poll:"—", primary:"Pending", notes:"Running in a Democrat-held district; open race" },
+  { name:"Paul LePage",        sub:"Former governor",      office:"U.S. House (ME-2)",          type:"House",    state:"ME", endorsed:"2026",       poll:"—", primary:"Pending", notes:"Note: Trump has not endorsed in ME-1 or the ME Senate race (Collins running uncontested)" },
+  { name:"Burt Jones",         sub:"Lt. Governor",         office:"Governor",                   type:"Governor", state:"GA", endorsed:"2025",       poll:"—", primary:"Pending", notes:"Open race; Gov. Kemp term-limited. Battleground state — GA is highly competitive." },
+  { name:"Blake Fiechter",     sub:"Challenger",           office:"IN State Senate, Dist. 19",  type:"State",    state:"IN", endorsed:"Apr 2026",   poll:"—", primary:"Won",     notes:"Defeated incumbent Sen. Travis Holdman by 20+ pts. Redistricting revenge primary." },
+  { name:"Michelle Davis",     sub:"State Rep.",           office:"IN State Senate",            type:"State",    state:"IN", endorsed:"Apr 2026",   poll:"—", primary:"Won",     notes:"Defeated incumbent Sen. Greg Walker" },
+  { name:"Brian Schmutzler",   sub:"Anesthesiologist",     office:"IN State Senate",            type:"State",    state:"IN", endorsed:"Apr 2026",   poll:"—", primary:"Won",     notes:"Defeated incumbent Sen. Linda Rogers" },
+  { name:"Trevor De Vries",    sub:"Insurance broker",     office:"IN State Senate",            type:"State",    state:"IN", endorsed:"Apr 2026",   poll:"—", primary:"Won",     notes:"Defeated incumbent Sen. Dan Dernulc" },
+  { name:"Jeff Ellington",     sub:"Former state Rep.",    office:"IN State Senate (open)",     type:"State",    state:"IN", endorsed:"Apr 2026",   poll:"—", primary:"Won",     notes:"Open seat (Sen. Bassler retiring after opposing redistricting)" },
+  { name:"Brenda Wilson",      sub:"Vigo Co. Council",     office:"IN State Senate",            type:"State",    state:"IN", endorsed:"Apr 2026",   poll:"—", primary:"Lost",    notes:"Trump-backed challenger lost to incumbent Sen. Greg Goode — the one incumbent who survived" },
+  { name:"Paula Copenhaver",   sub:"Challenger",           office:"IN State Senate",            type:"State",    state:"IN", endorsed:"Apr 2026",   poll:"—", primary:"Pending", notes:"Race vs. incumbent Sen. Spencer Deery too close to call as of May 6; most expensive of the 7" },
+  { name:"Joe Gruters",        sub:"Former FL GOP chair",  office:"FL Chief Financial Officer", type:"State",    state:"FL", endorsed:"2025",       poll:"—", primary:"Pending", notes:"Challenging incumbent Blaise Ingoglia; battleground executive race" },
+];
+
+let editingIndex = null; // null = new entry
+
+/* ── Helpers ──────────────────────────────────────────────── */
+const typeClass   = t => ({Senate:"b-senate",House:"b-house",Governor:"b-gov",State:"b-state"}[t]||"b-state");
+const resultClass = r => ({Won:"b-won",Lost:"b-lost",Pending:"b-pending","N/A":"b-na"}[r]||"b-pending");
+
+function toast(msg, color="#3aad6e") {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.style.background = color;
+  el.classList.add("show");
+  setTimeout(()=>el.classList.remove("show"), 2400);
+}
+
+/* ── List render ──────────────────────────────────────────── */
+function renderList() {
+  const q = (document.getElementById("list-search").value||"").toLowerCase();
+  const filtered = DATA.map((d,i)=>({...d,_i:i}))
+    .filter(d=>!q||[d.name,d.state,d.office,d.notes].some(s=>s.toLowerCase().includes(q)));
+
+  document.getElementById("count-pill").textContent =
+    `${DATA.length} endorsement${DATA.length!==1?"s":""}`;
+
+  const container = document.getElementById("candidate-list");
+  if(!filtered.length){
+    container.innerHTML=`<div style="padding:2rem;text-align:center;color:var(--text-3);font-style:italic;font-size:13px">No matches</div>`;
+    return;
+  }
+  container.innerHTML = filtered.map(d=>`
+    <div class="candidate-row ${editingIndex===d._i?'selected':''}" onclick="editEntry(${d._i})">
+      <div class="cr-info">
+        <div class="cr-name">${d.name}</div>
+        <div class="cr-meta">${d.state} · ${d.office}</div>
+      </div>
+      <div class="cr-badges">
+        <span class="badge ${typeClass(d.type)}">${d.type}</span>
+        <span class="badge ${resultClass(d.primary)}">${d.primary}</span>
+      </div>
+      <div class="cr-actions" onclick="event.stopPropagation()">
+        <button class="icon-btn del" title="Delete" onclick="confirmDelete(${d._i})">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+        </button>
+      </div>
+    </div>
+  `).join("");
+}
+
+/* ── Editor ───────────────────────────────────────────────── */
+function showEditor(entry) {
+  document.getElementById("empty-editor").style.display  = "none";
+  document.getElementById("editor-form").style.display   = "flex";
+  document.getElementById("editor-actions").style.display= "flex";
+  if(entry) {
+    document.getElementById("f-name").value     = entry.name;
+    document.getElementById("f-sub").value      = entry.sub;
+    document.getElementById("f-type").value     = entry.type;
+    document.getElementById("f-state").value    = entry.state;
+    document.getElementById("f-office").value   = entry.office;
+    document.getElementById("f-endorsed").value = entry.endorsed;
+    document.getElementById("f-poll").value     = entry.poll;
+    document.getElementById("f-primary").value  = entry.primary;
+    document.getElementById("f-notes").value    = entry.notes;
+    document.getElementById("side-title").textContent = "Edit endorsement";
+    document.getElementById("side-sub").textContent   = entry.name + " · " + entry.state;
+    document.getElementById("btn-delete").style.display = "inline-flex";
+  } else {
+    document.getElementById("f-name").value     = "";
+    document.getElementById("f-sub").value      = "";
+    document.getElementById("f-type").value     = "Senate";
+    document.getElementById("f-state").value    = "AL";
+    document.getElementById("f-office").value   = "";
+    document.getElementById("f-endorsed").value = "";
+    document.getElementById("f-poll").value     = "—";
+    document.getElementById("f-primary").value  = "Pending";
+    document.getElementById("f-notes").value    = "";
+    document.getElementById("side-title").textContent = "New endorsement";
+    document.getElementById("side-sub").textContent   = "Fill in the fields below";
+    document.getElementById("btn-delete").style.display = "none";
+  }
+}
+
+function editEntry(i) {
+  editingIndex = i;
+  showEditor(DATA[i]);
+  renderList();
+}
+
+function startNew() {
+  editingIndex = null;
+  showEditor(null);
+  renderList();
+  document.getElementById("f-name").focus();
+}
+
+function cancelEdit() {
+  editingIndex = null;
+  document.getElementById("empty-editor").style.display  = "flex";
+  document.getElementById("editor-form").style.display   = "none";
+  document.getElementById("editor-actions").style.display= "none";
+  document.getElementById("side-title").textContent = "Select or add an endorsement";
+  document.getElementById("side-sub").textContent   = "Click any row to edit it, or click Add to create a new one";
+  renderList();
+}
+
+function saveEntry() {
+  const name = document.getElementById("f-name").value.trim();
+  if(!name){ toast("Candidate name is required", "#d93535"); document.getElementById("f-name").focus(); return; }
+  const entry = {
+    name,
+    sub:      document.getElementById("f-sub").value.trim(),
+    office:   document.getElementById("f-office").value.trim() || document.getElementById("f-type").value,
+    type:     document.getElementById("f-type").value,
+    state:    document.getElementById("f-state").value,
+    endorsed: document.getElementById("f-endorsed").value.trim() || "2026",
+    poll:     document.getElementById("f-poll").value.trim() || "—",
+    primary:  document.getElementById("f-primary").value,
+    notes:    document.getElementById("f-notes").value.trim(),
+  };
+  if(editingIndex !== null) {
+    DATA[editingIndex] = entry;
+    toast("✓ Endorsement updated");
+  } else {
+    DATA.push(entry);
+    editingIndex = DATA.length - 1;
+    toast("✓ Endorsement added");
+  }
+  renderList();
+  updateOutput();
+  // Keep editor open so user can keep tweaking
+  showEditor(DATA[editingIndex]);
+}
+
+function confirmDelete(i) {
+  if(confirm(`Delete "${DATA[i].name}"?`)) {
+    DATA.splice(i,1);
+    if(editingIndex === i) cancelEdit();
+    else if(editingIndex > i) editingIndex--;
+    toast("Deleted", "#d93535");
+    renderList();
+    updateOutput();
+  }
+}
+function deleteEntry() {
+  if(editingIndex !== null) confirmDelete(editingIndex);
+}
+
+/* ── Output ───────────────────────────────────────────────── */
+function buildCode() {
+  const lines = DATA.map(d => {
+    const esc = s => s.replace(/\\/g,"\\\\").replace(/"/g,'\\"');
+    return `  { name:"${esc(d.name)}", sub:"${esc(d.sub)}", office:"${esc(d.office)}", type:"${d.type}", state:"${d.state}", endorsed:"${esc(d.endorsed)}", poll:"${esc(d.poll)}", primary:"${d.primary}", notes:"${esc(d.notes)}" }`;
+  });
+  return `const ENDORSEMENTS = [\n${lines.join(",\n")}\n];`;
+}
+
+function updateOutput() {
+  document.getElementById("output-code").textContent = buildCode();
+}
+
+function exportAndCopy() {
+  updateOutput();
+  const code = buildCode();
+  navigator.clipboard.writeText(code).then(()=>{
+    toast("✓ Code copied to clipboard!");
+  }).catch(()=>{
+    // Fallback
+    const ta = document.createElement("textarea");
+    ta.value = code; ta.style.position="fixed"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.select();
+    document.execCommand("copy"); document.body.removeChild(ta);
+    toast("✓ Code copied!");
+  });
+}
+
+/* ── Import JSON ──────────────────────────────────────────── */
+function importFromTracker() {
+  const choice = confirm(
+    "Import options:\n\n" +
+    "OK → Paste JSON array directly\n" +
+    "Cancel → Open a .json file\n\n" +
+    "(You can export your data as JSON from the tracker)"
+  );
+  if(choice) {
+    const raw = prompt("Paste your JSON array here (the [ ... ] part):");
+    if(!raw) return;
+    try {
+      const parsed = JSON.parse(raw);
+      if(!Array.isArray(parsed)) throw new Error("Not an array");
+      DATA = parsed;
+      cancelEdit();
+      renderList();
+      updateOutput();
+      toast(`✓ Imported ${DATA.length} endorsements`);
+    } catch(e) {
+      toast("Invalid JSON — check the format", "#d93535");
+    }
+  } else {
+    document.getElementById("file-input").click();
+  }
+}
+
+function handleFileImport(e) {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const parsed = JSON.parse(ev.target.result);
+      if(!Array.isArray(parsed)) throw new Error();
+      DATA = parsed;
+      cancelEdit();
+      renderList();
+      updateOutput();
+      toast(`✓ Imported ${DATA.length} endorsements`);
+    } catch {
+      toast("Could not parse file", "#d93535");
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = "";
+}
+
+/* ── Theme ────────────────────────────────────────────────── */
+function toggleTheme() {
+  const html = document.documentElement;
+  const dark = html.dataset.theme === "dark";
+  html.dataset.theme = dark ? "light" : "dark";
+  document.getElementById("tgl-lbl").textContent = dark ? "Light" : "Dark";
+  try{ localStorage.setItem("admin-theme", html.dataset.theme); }catch(e){}
+}
+try{
+  const s=localStorage.getItem("admin-theme");
+  if(s){ document.documentElement.dataset.theme=s; document.getElementById("tgl-lbl").textContent=s==="dark"?"Dark":"Light"; }
+}catch(e){}
+document.querySelector(".theme-toggle").addEventListener("keydown",e=>{
+  if(e.key==="Enter"||e.key===" "){ e.preventDefault(); toggleTheme(); }
+});
+
+/* ── Init ─────────────────────────────────────────────────── */
+renderList();
+updateOutput();
+</script>
+</body>
+</html>
